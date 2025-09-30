@@ -43,6 +43,7 @@ ul {
   padding: 1rem;
   background-color: #333;
   color: #fff;
+  position: relative;
 }
 
 .navbar .logo {
@@ -77,31 +78,39 @@ ul {
 
 /* Responsive */
 @media (max-width: 768px) {
-  .menu {
-    display: none;
-    position: absolute;
-    top: 60px;
-    right: 10px;
-    background-color: #333;
-    border-radius: 8px;
-    width: 200px;
-    padding: 1rem;
-    z-index: 1000;
-  }
 
-  .menu.active {
-    display: block;
-  }
-
-  .menu ul {
-    flex-direction: column;
-    gap: 1rem;
-  }
-
-  .menu-toggle {
-    display: block;
-  }
+.menu {
+  display: none;
+  position: absolute;
+  top: 60px;
+  left: 0; /* Cambié de 'right' a 'left' para que aparezca desde la izquierda */
+  background-color: #333;
+  border-radius: 8px;
+  width: 200px;
+  padding: 1rem;
+  z-index: 1000;
 }
+
+.menu.active {
+  display: block;
+}
+
+.menu ul {
+  flex-direction: column;
+  gap: 1rem;
+  padding-left: 0; /* Asegura que la lista de items no esté desplazada */
+}
+
+.menu-toggle {
+  display: block;
+  font-size: 1.8rem;
+  background: none;
+  border: none;
+  color: #fff;
+  cursor: pointer;
+}    
+}
+
 .nav-links {
   list-style: none;
   display: flex;
@@ -264,6 +273,38 @@ footer {
     flex-direction: column;
     gap: 1rem;
   }
+}
+
+
+
+/* ESTILO PAGINA PANELES */
+
+
+.servicio-contenido {
+  display: flex;
+  align-items: flex-start;
+  gap: 2rem;
+  padding: 2rem;
+  background-color: #f8f8f8;
+  border-radius: 10px;
+  margin: 1rem;
+  flex-wrap: wrap;
+}
+
+.servicio-contenido img {
+  max-width: 400px;
+  width: 100%;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.descripcion {
+  flex: 1;
+  min-width: 250px;
+}
+
+.descripcion h2 {
+  margin-top: 0;
 }
 
 /* ESTILO PAGINA CONTACTO */
