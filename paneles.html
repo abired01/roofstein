@@ -92,6 +92,117 @@
         </ul>
     </div>
 </div>
+
+<!-- Cambiar a partir de aqui en caso de error-->
+ <div class="col-lg-6" id="cotiza">
+    <div class="contact-submit-boxarea">
+      <h4>Cotiza Ahora</h4>
+
+      <form id="cotizaForm" action="mail.php" method="POST" novalidate>
+
+        <div class="row">
+          <div class="col-lg-6">
+            <div class="input-area">
+              <p>Nombre (requerido)</p>
+              <input type="text" placeholder="Nombre" name="name" required>
+              <span class="error"></span>
+            </div>
+          </div>
+          <div class="col-lg-6">
+            <div class="input-area">
+              <p>Celular (requerido)</p>
+              <input type="number" placeholder="Celular" name="phone" required>
+              <span class="error"></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col-lg-3">
+            <div class="input-area">
+              <p>Pago menor (requerido)</p>
+              <select name="pago_menor" required>
+                <option value="">Consumo...</option>
+                <option>$2,000</option>
+                <option>$5,000</option>
+                <option>$10,000</option>
+              </select>
+              <span class="error"></span>
+            </div>
+          </div>
+
+          <div class="col-lg-3">
+            <div class="input-area">
+              <p>Pago mayor (requerido)</p>
+              <select name="pago_mayor" required>
+                <option value="">Consumo...</option>
+                <option>$5,000</option>
+                <option>$10,000</option>
+                <option>$20,000</option>
+              </select>
+              <span class="error"></span>
+            </div>
+          </div>
+
+          <div class="col-lg-3">
+            <div class="input-area">
+              <p>Tarifa (requerido)</p>
+              <select name="tarifa" required>
+                <option value="">Seleccione uno...</option>
+                <option>Residencial (1)</option>
+                <option>Residencial (1C)</option>
+                <option>Comercial (PDBT)</option>
+              </select>
+              <span class="error"></span>
+            </div>
+          </div>
+
+          <div class="col-lg-3">
+            <div class="input-area">
+              <p>Estado (requerido)</p>
+              <select name="estado" required>
+                <option value="">Seleccione uno...</option>
+                <option>Nuevo León</option>
+                <option>Coahuila</option>
+                <option>Tamaulipas</option>
+              </select>
+              <span class="error"></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-lg-12">
+          <div class="input-area">
+            <p>Email (requerido)</p>
+            <input type="email" name="email" placeholder="Email" required>
+            <span class="error"></span>
+          </div>
+        </div>
+
+        <div class="col-lg-12">
+          <div class="input-area">
+            <p>Número de Servicio CFE (Opcional)</p>
+            <textarea placeholder="Describe tu proyecto" name="mensaje"></textarea>
+          </div>
+        </div>
+
+        <div class="col-lg-12">
+          <div class="input-area1">
+            <input type="checkbox" id="privacidad" required>
+            <p>Acepto el <a href="aviso.html">Aviso de privacidad</a> de este sitio.</p>
+            <span class="error"></span>
+          </div>
+        </div>
+
+        <div class="col-lg-12">
+          <div class="input-area1">
+            <button type="submit" class="header-btn1">Cotizar Ahora <i class="fa-solid fa-arrow-right"></i></button>
+          </div>
+        </div>
+
+      </form>
+    </div>
+  </div>
 </main>
 
 <footer>

@@ -515,3 +515,171 @@ con roofsten cualquier trabajo  de nstalacion y mantenimiento en tu hogar esta e
 roofstein, tuy techo nuestra mision 
 
 */
+
+/* cambiar a partir de aqui en caso de error */
+
+/* ---------- Contenedor general (tarjeta) ---------- */
+#cotiza {
+  max-width: 820px;            /* ancho similar al ejemplo */
+  margin: 32px auto;
+  background: #ffffff;         /* tarjeta blanca */
+  border-radius: 14px;         /* bordes suaves */
+  padding: 30px;
+  box-shadow: 0 8px 28px rgba(14,30,37,0.08);
+  font-family: Inter, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  color: #0b1320;
+}
+
+/* Título */
+#cotiza .contact-submit-boxarea h4,
+#cotiza h4 {
+  font-size: 28px;
+  margin: 0 0 18px;
+  font-weight: 700;
+  color: #0f1724;
+}
+
+/* pequeñas descripciones encima */
+#cotiza .input-area p {
+  font-size: 13px;
+  font-weight: 600;
+  color: #334155;
+  margin: 0 0 8px;
+  text-transform: capitalize;
+}
+
+/* Grid interno — adapta a tu estructura .row .col-lg-* */
+#cotiza .row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+}
+
+/* Col widths (simples: 100% / 50% / 25% based on classes) */
+#cotiza .col-lg-12 { flex: 0 0 100%; }
+#cotiza .col-lg-6  { flex: 0 0 calc(50% - 9px); }   /* -9 para compensar gap */
+#cotiza .col-lg-3  { flex: 0 0 calc(25% - 13.5px); }
+
+/* Inputs, selects y textarea */
+#cotiza input[type="text"],
+#cotiza input[type="number"],
+#cotiza input[type="email"],
+#cotiza select,
+#cotiza textarea {
+  display: block;
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 8px;
+  border: 1px solid #e6eef6;
+  background: #fbfdff;
+  font-size: 15px;
+  color: #0b1320;
+  box-sizing: border-box;
+  transition: border-color .18s ease, box-shadow .18s ease, transform .08s ease;
+  -webkit-appearance: none; /* quita flecha nativa en algunos navegadores */
+}
+
+/* Placeholder más suave */
+#cotiza ::placeholder {
+  color: #94a3b8;
+  opacity: 1;
+}
+
+/* Focus: borde color besun (azul/verde azulado) */
+#cotiza input:focus,
+#cotiza select:focus,
+#cotiza textarea:focus {
+  outline: none;
+  border-color: #0ea5a4;
+  box-shadow: 0 6px 18px rgba(14,165,164,0.08);
+  transform: translateY(-1px);
+}
+
+/* Select flecha custom (si quieres) */
+#cotiza select {
+  background-image: linear-gradient(45deg, transparent 50%, #64748b 50%),
+                    linear-gradient(135deg, #64748b 50%, transparent 50%);
+  background-position: calc(100% - 18px) calc(1em + 2px), calc(100% - 13px) calc(1em + 2px);
+  background-size: 6px 6px, 6px 6px;
+  background-repeat: no-repeat;
+  padding-right: 36px;
+}
+
+/* Textarea */
+#cotiza textarea {
+  min-height: 120px;
+  resize: vertical;
+}
+
+/* Checkbox + texto (alineación) */
+#cotiza .input-area1 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+#cotiza .input-area1 input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: #0ea5a4; /* color moderno para checkbox en navegadores soportados */
+}
+
+/* Enlaces dentro del área (Aviso de privacidad) */
+#cotiza .input-area1 a {
+  color: #0ea5a4;
+  text-decoration: none;
+  font-weight: 600;
+}
+#cotiza .input-area1 a:hover { text-decoration: underline; }
+
+/* Botón principal */
+#cotiza .header-btn1 {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: linear-gradient(90deg, #00bfa6 0%, #06a89b 100%);
+  color: #ffffff;
+  border: none;
+  padding: 12px 20px;
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 15px;
+  cursor: pointer;
+  box-shadow: 0 8px 20px rgba(6,168,155,0.16);
+  transition: transform .12s ease, box-shadow .12s ease, opacity .12s ease;
+}
+
+#cotiza .header-btn1:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 30px rgba(6,168,155,0.18);
+}
+
+/* Icono en botón (si usas fontawesome) */
+#cotiza .header-btn1 i { font-size: 14px; }
+
+/* Mensajes de error / helper */
+#cotiza .error {
+  color: #ef4444;
+  font-size: 13px;
+  margin-top: 6px;
+  min-height: 16px;
+}
+
+/* Pequeña nota para el email/celular formato */
+#cotiza .hint {
+  font-size: 12px;
+  color: #64748b;
+  margin-top: 6px;
+}
+
+/* Responsive: en móviles apilar todo */
+@media (max-width: 880px) {
+  #cotiza {
+    padding: 20px;
+    margin: 18px;
+  }
+  #cotiza .col-lg-6, #cotiza .col-lg-3 {
+    flex: 0 0 100%;
+  }
+}
