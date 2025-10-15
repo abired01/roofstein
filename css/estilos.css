@@ -83,7 +83,7 @@ ul {
   display: none;
   position: absolute;
   top: 60px;
-  left: 0; /* Cambié de 'right' a 'left' para que aparezca desde la izquierda */
+  left: 0; 
   background-color: #333;
   border-radius: 8px;
   width: 200px;
@@ -98,7 +98,7 @@ ul {
 .menu ul {
   flex-direction: column;
   gap: 1rem;
-  padding-left: 0; /* Asegura que la lista de items no esté desplazada */
+  padding-left: 0; 
 }
 
 .menu-toggle {
@@ -221,7 +221,7 @@ ul {
   top: 0; left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0,0,0,0.4); /* oscurece la imagen */
+  background-color: rgba(0,0,0,0.4);
   z-index: 0;
 }
 
@@ -295,7 +295,6 @@ footer {
   max-width: 400px;
   width: 100%;
   border-radius: 12px;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
 }
 
 .descripcion {
