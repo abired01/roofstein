@@ -1,0 +1,422 @@
+import React, { useState, useEffect } from 'react';
+import { initializeApp } from 'firebase/app';
+import { 
+  getFirestore, collection, addDoc, onSnapshot, query, 
+  doc, setDoc 
+} from 'firebase/firestore';
+import { 
+  getAuth, onAuthStateChanged, signInAnonymously, signInWithCustomToken 
+} from 'firebase/auth'; // Corregido: Importación desde 'firebase/auth'
+import { 
+  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area
+} from 'recharts';
+import { 
+  Sun, TrendingDown, ShieldCheck, Zap, Wallet, Calendar, CheckCircle2, 
+  Phone, ArrowRight, Settings, User, MapPin, Calculator, Printer, 
+  Eye, Share2, FileText, Save, Database, History, Loader2, Search
+} from 'lucide-react';
+
+// Configuración de Firebase (proporcionada por el entorno)
+const firebaseConfig = JSON.parse(__firebase_config);
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const appId = typeof __app_id !== 'undefined' ? __app_id : 'energy-nova-v1';
+
+const App = () => {
+  // --- ESTADOS ---
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [history, setHistory] = useState([]);
+  const [isPrintMode, setIsPrintMode] = useState(false);
+  const [activeTab, setActiveTab] = useState('diagnostico');
+  const [showHistory, setShowHistory] = useState(false);
+
+  const [inputs, setInputs] = useState({
+    nombre: "Nuevo Cliente",
+    direccion: "",
+    ciudad: "Apodaca, NL",
+    telefono: "",
+    consumoAnual: 5000,
+    inversion: 60000,
+    numPaneles: 6,
+    tipoPanel: "Bifaciales 132 cel",
+    pagoPromedioMensual: 1500,
+    vendedor: "Carlos Colorado",
+    rfc: "COCC831018R70",
+    fecha: new Date().toLocaleDateString('es-MX'),
+    vigencia: "15 días"
+  });
+
+  // --- 1. AUTENTICACIÓN (Regla 3) ---
+  useEffect(() => {
+    const initAuth = async () => {
+      try {
+        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+          await signInWithCustomToken(auth, __initial_auth_token);
+        } else {
+          await signInAnonymously(auth);
+        }
+      } catch (error) {
+        console.error("Error de auth:", error);
+      }
+    };
+    initAuth();
+    const unsubscribe = onAuthStateChanged(auth, (u) => {
+      setUser(u);
+      setLoading(false);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  // --- 2. CARGAR HISTORIAL (Regla 1 y 2) ---
+  useEffect(() => {
+    if (!user) return;
+    
+    // Ruta estricta para datos públicos del AppId
+    const q = collection(db, 'artifacts', appId, 'public', 'data', 'cotizaciones');
+    
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const docs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      // Ordenamos en memoria (Regla 2)
+      setHistory(docs.sort((a, b) => b.createdAt - a.createdAt));
+    }, (error) => {
+      console.error("Error cargando historial:", error);
+    });
+
+    return () => unsubscribe();
+  }, [user]);
+
+  // --- 3. GUARDAR EN LA NUBE ---
+  const saveToCloud = async () => {
+    if (!user) return;
+    setSaving(true);
+    try {
+      const collectionRef = collection(db, 'artifacts', appId, 'public', 'data', 'cotizaciones');
+      await addDoc(collectionRef, {
+        ...inputs,
+        userId: user.uid,
+        createdAt: Date.now()
+      });
+      setSaving(false);
+      setShowHistory(true);
+    } catch (error) {
+      console.error("Error al guardar:", error);
+      setSaving(false);
+    }
+  };
+
+  const loadFromHistory = (item) => {
+    setInputs(item);
+    setShowHistory(false);
+  };
+
+  // --- LÓGICA DE CÁLCULOS ---
+  const generarDataAhorro = () => {
+    const inflacionCFE = 1.07;
+    const data = [];
+    const puntos = [0, 1, 3, 5, 10, 20];
+    puntos.forEach(year => {
+      const gastoAnualBase = (inputs.pagoPromedioMensual || 0) * 12;
+      const acumuladoCFE = year === 0 ? 0 : gastoAnualBase * ((Math.pow(inflacionCFE, year) - 1) / (inflacionCFE - 1));
+      data.push({ year, sinPaneles: Math.round(acumuladoCFE) });
+    });
+    return data;
+  };
+
+  const ahorroData = generarDataAhorro();
+  const roiAnos = inputs.pagoPromedioMensual > 0 
+    ? (inputs.inversion / (inputs.pagoPromedioMensual * 12)).toFixed(1) 
+    : "0.0";
+
+  // Componente Logo
+  const Logo = ({ light = false, size = "md" }) => (
+    <div className="flex flex-col items-start leading-none">
+      <div className="flex items-baseline gap-1">
+        <span className={`${size === "lg" ? 'text-4xl' : 'text-2xl'} font-black tracking-tighter ${light ? 'text-white' : 'text-slate-900'}`}>Energy</span>
+        <span className={`${size === "lg" ? 'text-4xl' : 'text-2xl'} font-light tracking-widest ${light ? 'text-orange-400' : 'text-orange-500'}`}>Nova</span>
+      </div>
+    </div>
+  );
+
+  if (loading) return (
+    <div className="h-screen w-full flex items-center justify-center bg-slate-50">
+      <Loader2 className="animate-spin text-orange-500" size={48} />
+    </div>
+  );
+
+  if (isPrintMode) {
+    return (
+      <div className="bg-white min-h-screen p-12 text-slate-900 font-serif max-w-[800px] mx-auto border shadow-sm">
+        <div className="flex justify-between items-center mb-8 print:hidden">
+          <button onClick={() => setIsPrintMode(false)} className="bg-slate-800 text-white px-6 py-2 rounded-full font-bold flex items-center gap-2">
+            <Eye size={16} /> Regresar
+          </button>
+          <button onClick={() => window.print()} className="bg-orange-500 text-white px-6 py-2 rounded-full font-bold flex items-center gap-2">
+            <Printer size={16} /> Imprimir PDF
+          </button>
+        </div>
+        <div className="flex justify-between items-start border-b-2 border-slate-100 pb-8 mb-8">
+          <Logo size="lg" />
+          <div className="text-right">
+            <h1 className="text-2xl font-black">COTIZACIÓN</h1>
+            <p className="text-slate-400 text-sm">#{Math.random().toString(36).substr(2, 6).toUpperCase()}</p>
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-8 mb-10 text-sm">
+          <div>
+            <p className="text-orange-600 font-black text-[10px] uppercase">Cliente</p>
+            <p className="text-lg font-bold">{inputs.nombre}</p>
+            <p className="text-slate-600">{inputs.direccion}</p>
+            <p className="text-slate-600">Tel: {inputs.telefono}</p>
+          </div>
+          <div className="text-right">
+            <p className="text-orange-600 font-black text-[10px] uppercase">Vendedor</p>
+            <p className="font-bold">{inputs.vendedor}</p>
+            <p className="text-slate-500">Fecha: {inputs.fecha}</p>
+          </div>
+        </div>
+        <table className="w-full text-sm border-collapse">
+          <thead>
+            <tr className="border-b-2 border-slate-100 text-left">
+              <th className="py-4 font-black uppercase text-[10px] text-slate-400">Descripción</th>
+              <th className="py-4 text-right font-black uppercase text-[10px] text-slate-400">Inversión</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr className="border-b border-slate-50">
+              <td className="py-4">Sistema Solar Fotovoltaico: {inputs.numPaneles} {inputs.tipoPanel}, Inversor, Estructura, Instalación y Gestoría CFE.</td>
+              <td className="py-4 text-right font-bold text-lg">${inputs.inversion.toLocaleString()}</td>
+            </tr>
+          </tbody>
+        </table>
+        <div className="mt-20 border-t border-slate-100 pt-10 flex justify-center italic text-slate-400 text-xs text-center max-w-md mx-auto">
+          "Paga tu sistema solar con lo que ya regalas a CFE cada mes."
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-slate-100 font-sans text-slate-900 flex flex-col md:flex-row">
+      <aside className="w-full md:w-80 bg-white border-r border-slate-200 flex flex-col h-screen sticky top-0">
+        <div className="p-6 border-b border-slate-100">
+          <Logo />
+          <div className="flex gap-2 mt-6">
+            <button 
+              onClick={saveToCloud}
+              disabled={saving}
+              className="flex-1 bg-slate-900 text-white py-3 rounded-2xl text-xs font-bold flex items-center justify-center gap-2 hover:bg-slate-800 transition-all disabled:opacity-50"
+            >
+              {saving ? <Loader2 className="animate-spin" size={14} /> : <Save size={14} />} 
+              Guardar
+            </button>
+            <button 
+              onClick={() => setShowHistory(!showHistory)}
+              className={`p-3 rounded-2xl transition-all ${showHistory ? 'bg-orange-500 text-white' : 'bg-slate-100 text-slate-500'}`}
+            >
+              <History size={18} />
+            </button>
+          </div>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+          {showHistory ? (
+            <div className="space-y-4 animate-in fade-in duration-300">
+              <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                <Database size={12} /> Cotizaciones Guardadas
+              </h3>
+              {history.length === 0 ? (
+                <p className="text-xs text-slate-400 italic">No hay cotizaciones guardadas aún.</p>
+              ) : (
+                history.map((item) => (
+                  <button 
+                    key={item.id} 
+                    onClick={() => loadFromHistory(item)}
+                    className="w-full text-left p-3 rounded-xl border border-slate-100 hover:border-orange-200 hover:bg-orange-50 transition-all group"
+                  >
+                    <p className="font-bold text-sm text-slate-800 group-hover:text-orange-600 truncate">{item.nombre}</p>
+                    <div className="flex justify-between items-center mt-1">
+                      <p className="text-[10px] text-slate-400">{new Date(item.createdAt).toLocaleDateString()}</p>
+                      <p className="text-[10px] font-bold text-slate-600">${item.inversion.toLocaleString()}</p>
+                    </div>
+                  </button>
+                ))
+              )}
+            </div>
+          ) : (
+            <div className="space-y-6">
+              <div className="space-y-4">
+                <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                  <User size={12} /> Cliente
+                </h3>
+                <input placeholder="Nombre" value={inputs.nombre} onChange={(e) => setInputs({...inputs, nombre: e.target.value})} className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none" />
+                <input placeholder="WhatsApp" value={inputs.telefono} onChange={(e) => setInputs({...inputs, telefono: e.target.value})} className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none" />
+              </div>
+
+              <div className="space-y-4">
+                <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                  <Calculator size={12} /> Técnica
+                </h3>
+                <div>
+                  <label className="text-[10px] font-bold text-slate-400 ml-1">Consumo Anual (kWh)</label>
+                  <input type="number" value={inputs.consumoAnual} onChange={(e) => setInputs({...inputs, consumoAnual: Number(e.target.value)})} className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none" />
+                </div>
+                <div>
+                  <label className="text-[10px] font-bold text-slate-400 ml-1">Pago Promedio $</label>
+                  <input type="number" value={inputs.pagoPromedioMensual} onChange={(e) => setInputs({...inputs, pagoPromedioMensual: Number(e.target.value)})} className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none" />
+                </div>
+                <div>
+                  <label className="text-[10px] font-bold text-slate-400 ml-1">Inversión Sistema $</label>
+                  <input type="number" value={inputs.inversion} onChange={(e) => setInputs({...inputs, inversion: Number(e.target.value)})} className="w-full px-4 py-2 bg-orange-50 border border-orange-200 rounded-xl text-sm font-bold text-orange-700 outline-none" />
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="p-6 bg-slate-50 border-t border-slate-100">
+           <button onClick={() => setIsPrintMode(true)} className="w-full bg-white border border-slate-200 text-slate-700 py-3 rounded-2xl text-xs font-black uppercase tracking-widest flex items-center justify-center gap-2 shadow-sm hover:shadow-md transition-all">
+             <Printer size={14} /> Vista PDF
+           </button>
+        </div>
+      </aside>
+
+      <section className="flex-1 overflow-y-auto h-screen scroll-smooth">
+        <header className="bg-slate-900 text-white pt-10 pb-20 px-6 md:px-12 relative overflow-hidden">
+          <div className="max-w-4xl mx-auto">
+            <div className="flex justify-between items-center mb-10">
+               <div className="flex items-center gap-2 px-3 py-1 bg-orange-500/10 border border-orange-500/20 rounded-full">
+                  <div className="w-2 h-2 bg-orange-500 rounded-full animate-pulse"></div>
+                  <span className="text-[10px] font-bold text-orange-400 uppercase tracking-widest">En Vivo</span>
+               </div>
+               <div className="text-[10px] text-slate-500 font-bold uppercase">Sesión: {user?.uid.substring(0,8)}</div>
+            </div>
+            <h1 className="text-4xl md:text-6xl font-black mb-4">Propuesta para <span className="text-orange-500">{inputs.nombre}</span></h1>
+            <p className="text-slate-400 text-lg max-w-xl">Diseñamos tu libertad energética.</p>
+            
+            <nav className="flex gap-2 mt-12 p-1 bg-white/5 rounded-2xl w-fit border border-white/10">
+              {['diagnostico', 'solucion', 'ahorro'].map((id) => (
+                <button 
+                  key={id}
+                  onClick={() => setActiveTab(id)}
+                  className={`px-6 py-2 rounded-xl font-bold text-xs uppercase tracking-widest transition-all ${activeTab === id ? 'bg-orange-500 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
+                >
+                  {id === 'diagnostico' ? 'Análisis' : id === 'solucion' ? 'Sistema' : 'Inversión'}
+                </button>
+              ))}
+            </nav>
+          </div>
+        </header>
+
+        <main className="max-w-4xl mx-auto -mt-10 px-6 md:px-12 pb-32">
+          {activeTab === 'diagnostico' && (
+            <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-500">
+               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100">
+                    <Zap className="text-orange-500 mb-4" size={32} />
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Gasto Anual</p>
+                    <p className="text-2xl font-black">${((inputs.pagoPromedioMensual || 0) * 12).toLocaleString()}</p>
+                  </div>
+                  <div className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100">
+                    <TrendingDown className="text-green-500 mb-4" size={32} />
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Ahorro Diario</p>
+                    <p className="text-2xl font-black">98%</p>
+                  </div>
+                  <div className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100">
+                    <Calendar className="text-blue-500 mb-4" size={32} />
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">ROI Estimado</p>
+                    <p className="text-2xl font-black">{roiAnos} años</p>
+                  </div>
+               </div>
+
+               <div className="bg-white p-10 rounded-[3rem] shadow-xl border border-slate-100">
+                  <h3 className="text-xl font-black mb-8">Costo de Energía CFE (Proyección 20 años)</h3>
+                  <div className="h-[350px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <AreaChart data={ahorroData}>
+                        <defs>
+                          <linearGradient id="colorRed" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#ef4444" stopOpacity={0.1}/>
+                            <stop offset="95%" stopColor="#ef4444" stopOpacity={0}/>
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                        <XAxis dataKey="year" />
+                        <YAxis hide />
+                        <Tooltip 
+                          contentStyle={{borderRadius: '20px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)'}}
+                          formatter={(v) => [`$${v.toLocaleString()}`, 'Gasto Acumulado']}
+                        />
+                        <Area type="monotone" dataKey="sinPaneles" stroke="#ef4444" strokeWidth={5} fillOpacity={1} fill="url(#colorRed)" />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  </div>
+               </div>
+            </div>
+          )}
+
+          {activeTab === 'solucion' && (
+             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in duration-500">
+                <div className="bg-white p-10 rounded-[3rem] border border-slate-100 shadow-sm">
+                   <Sun className="text-orange-500 mb-6" size={40} />
+                   <h3 className="text-3xl font-black mb-6">Equipamiento Premium</h3>
+                   <div className="space-y-4">
+                      <div className="flex items-center gap-4">
+                         <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                         <p className="font-bold text-slate-800">{inputs.numPaneles} {inputs.tipoPanel}</p>
+                      </div>
+                      <div className="flex items-center gap-4">
+                         <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                         <p className="font-bold text-slate-800">Inversor Inteligente</p>
+                      </div>
+                      <div className="flex items-center gap-4">
+                         <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                         <p className="font-bold text-slate-800">Monitoreo APP 24/7</p>
+                      </div>
+                   </div>
+                </div>
+                <div className="bg-slate-900 p-10 rounded-[3rem] text-white flex flex-col justify-center">
+                   <ShieldCheck className="text-orange-400 mb-6" size={48} />
+                   <h3 className="text-2xl font-black mb-2">Garantía Extendida</h3>
+                   <p className="text-slate-400">Hasta 30 años en paneles y monitoreo activo de generación.</p>
+                </div>
+             </div>
+          )}
+
+          {activeTab === 'ahorro' && (
+             <div className="bg-slate-900 p-12 rounded-[3.5rem] shadow-2xl text-white animate-in zoom-in duration-500">
+                <div className="text-center mb-12">
+                   <p className="text-orange-500 font-black uppercase tracking-[0.4em] text-xs mb-4">Inversión Total</p>
+                   <h2 className="text-7xl font-black mb-4">${(inputs.inversion || 0).toLocaleString()}</h2>
+                   <p className="text-slate-500">Sistema completo con instalación e interconexión CFE.</p>
+                </div>
+                <div className="grid grid-cols-2 gap-8 py-10 border-t border-white/10 text-center">
+                   <div>
+                      <p className="text-slate-500 font-bold uppercase text-[10px] tracking-widest mb-2">Ahorro 25 Años</p>
+                      <p className="text-2xl font-black text-green-400">$1.2M+</p>
+                   </div>
+                   <div>
+                      <p className="text-slate-500 font-bold uppercase text-[10px] tracking-widest mb-2">Impuestos</p>
+                      <p className="text-2xl font-black text-blue-400">100% Deducible</p>
+                   </div>
+                </div>
+                <button 
+                  onClick={() => {
+                    const msg = `Hola Carlos, soy ${inputs.nombre}. Me interesa el sistema de ${inputs.numPaneles} paneles.`;
+                    window.open(`https://wa.me/528111209832?text=${encodeURIComponent(msg)}`, '_blank');
+                  }}
+                  className="w-full bg-orange-500 py-5 rounded-[2rem] font-black text-sm uppercase tracking-widest mt-8 hover:scale-[1.02] transition-transform shadow-xl shadow-orange-500/20"
+                >
+                  Confirmar Proyecto
+                </button>
+             </div>
+          )}
+        </main>
+      </section>
+    </div>
+  );
+};
+
+export default App;
